@@ -20,19 +20,19 @@ class PdoGsb
     /**
      * Connexion maison
      */
-    private static $serveur = 'sqlsrv:Server=DESKTOP-SGVJ7L7\SQLEXPRESS';
-    private static $bdd = 'Database=GSB_VALIDE_SALAM';
-    private static $user = 'root';
-    private static $mdp = 'root';
+    private static $serveur = '***';
+    private static $bdd = '***';
+    private static $user = '***';
+    private static $mdp = '***';
     private static $monPdo;
     private static $monPdoGsb = null;
     /**
      * Connexion épreuve de bts
      */
-    // private static $serveur = 'sqlsrv:Server=SVRSLAM02';
-    // private static $bdd = 'Database=GSB_VALIDE_SALAM';
-    // private static $user = 'afc_salam';
-    // private static $mdp = 'afc_salam';
+    // private static $serveur = '***';
+    // private static $bdd = '***';
+    // private static $user = '***';
+    // private static $mdp = '***';
     // private static $monPdo;
     // private static $monPdoGsb = null;
 
