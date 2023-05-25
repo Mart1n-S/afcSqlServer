@@ -21,7 +21,7 @@ class PdoGsb
      * Connexion maison
      */
     private static $serveur = 'sqlsrv:Server=DESKTOP-SGVJ7L7\SQLEXPRESS';
-    private static $bdd = 'Database=GSB_VALIDE_SALAM';
+    private static $bdd = 'Database=GSB_VALIDE_SALAM_TEST';
     private static $user = 'root';
     private static $mdp = 'root';
     private static $monPdo;
@@ -119,6 +119,18 @@ class PdoGsb
         return $ligne;
     }
 
+    /**
+     * Vérifie si une fiche frais existe
+     */
+    public function existanceFiche($idVisiteur, $mois)
+    {
+        $req = self::$monPdo->prepare("EXEC existanceFiche :idVisiteur, :mois");
+        $req->bindParam(':idVisiteur', $idVisiteur);
+        $req->bindParam(':mois', $mois);
+        $req->execute();
+        $ligne = $req->fetch(PDO::FETCH_NUM);
+        return $ligne;
+    }
 
     /**
      * Retourne les informations d'une fiche frais en fonction du visiteur sélectionné et du mois considéré
@@ -127,7 +139,8 @@ class PdoGsb
      * Par exemple, dans la classe PdoGsb, self::$monPdoGsb est une référence à la propriété statique monPdoGsb de la classe elle-même. 
      * Cela signifie que la propriété monPdoGsb est partagée par toutes les instances de la classe PdoGsb, et peut être utilisée sans avoir besoin de créer une instance de la classe.
      */
-    public function getInfosFicheFraisVisiteur($idVisiteur, $mois)
+    // getInfosFicheFraisVisiteur
+    public function getInfosFiche($idVisiteur, $mois)
     {
         $req = self::$monPdo->prepare("EXEC getInfosFicheFraisVisiteur :idVisiteur, :mois");
         $req->bindParam(':idVisiteur', $idVisiteur);
@@ -471,9 +484,29 @@ class PdoGsb
      */
     public function setLesQuantitesFraisForfaitises($unIdVisiteur, $unMois, $lesFraisForfaitises)
     {
+        try {
+            self::$monPdo->beginTransaction();
+
+            foreach ($lesFraisForfaitises as $categorie => $fraisForfait) {
+                $req = self::$monPdo->prepare('EXEC SP_LIGNE_FF_MAJ :idVisiteur, :mois, :quantite, :idCategorie');
+                $req->bindParam(':idVisiteur', $unIdVisiteur);
+                $req->bindParam(':mois', $unMois);
+                $req->bindParam(':quantite', $fraisForfait->getQuantite());
+                $req->bindParam(':idCategorie', $categorie);
+                $req->execute();
+            }
+
+            self::$monPdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            self::$monPdo->rollback();
+            // die("<h1>Erreur : " . $e->getMessage() . "</h1>");
+            // Ajouter le message d'erreur à la variable de requête 'erreurs'
+            $errorMessage = "Erreur lors de la mise à jour des quantités des frais forfaitisés : " . $e->getMessage();
+            ajouterErreur($errorMessage);
+            return false;
+        }
     }
-
-
     /**
      *
      * Met à jour les frais hors forfait dans la base de données.

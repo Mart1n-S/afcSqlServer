@@ -109,28 +109,10 @@ final class FraisForfaitise extends Frais
     }
 
     // Méthode pour récupérer le montant des frais forfaitisés
-    // public function getMontant()
-    // {
-    //     // Implémentation du calcul du montant pour cette catégorie de frais
-    //     switch ($this->laCategorieFraisForfaitise) {
-    //         case 'ETP':
-    //             $montant = 110.00;
-    //             break;
-    //         case 'KM':
-    //             $montant = 0.62;
-    //             break;
-    //         case 'NUI':
-    //             $montant = 80.00;
-    //             break;
-    //         case 'REP':
-    //             $montant = 25.00;
-    //             break;
-    //         default:
-    //             $montant = 0.00;
-    //             break;
-    //     }
-    //     return $montant * $this->quantite;
-    // }
+    public function getMontant()
+    {
+        return $this->laCategorieFraisForfaitise->getMontant() * $this->quantite;
+    }
 }
 
 

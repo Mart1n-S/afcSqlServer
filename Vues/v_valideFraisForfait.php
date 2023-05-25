@@ -10,16 +10,16 @@
         </tr>
         <tr>
             <td><input type="text" size="3" name="txtEtape" id="txtEtape" value="<?php if (isset($quantitesDeFraisForfaitises)) {
-                                                                                        echo $quantitesDeFraisForfaitises[0]['LFF_QTE'];
+                                                                                        echo $quantitesDeFraisForfaitises[0];
                                                                                     }  ?>" tabindex="30" /></td>
             <td><input type="text" size="3" name="txtKm" id="txtKm" value="<?php if (isset($quantitesDeFraisForfaitises)) {
-                                                                                echo $quantitesDeFraisForfaitises[1]['LFF_QTE'];
+                                                                                echo $quantitesDeFraisForfaitises[1];
                                                                             } ?>" tabindex="35" /></td>
             <td><input type="text" size="3" name="txtNuitee" id="txtNuitee" value="<?php if (isset($quantitesDeFraisForfaitises)) {
-                                                                                        echo  $quantitesDeFraisForfaitises[2]['LFF_QTE'];
+                                                                                        echo  $quantitesDeFraisForfaitises[2];
                                                                                     } ?>" tabindex="40" /></td>
             <td><input type="text" size="3" name="txtRepas" id="txtRepas" value="<?php if (isset($quantitesDeFraisForfaitises)) {
-                                                                                        echo  $quantitesDeFraisForfaitises[3]['LFF_QTE'];
+                                                                                        echo  $quantitesDeFraisForfaitises[3];
                                                                                     } ?>" tabindex="45" /></td>
             <!-- <td><input type="text" size="3" name="txtEtape" id="txtEtape" tabindex="30" /></td>
             <td><input type="text" size="3" name="txtKm" id="txtKm" tabindex="35" /></td>

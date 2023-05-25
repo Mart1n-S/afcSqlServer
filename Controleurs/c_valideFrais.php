@@ -27,10 +27,9 @@ switch ($action) {
             $idVisiteurSelectione = $_POST['listeVisiteur'];
             $moisConcerneSelectione = $_POST['txtMoisFiche'];
             visiteurSelectionne($idVisiteurSelectione, $moisConcerneSelectione);
-            // on récupère grâce à la procédure stockée les infos de la fiche frais
-            $infosFiche = $pdo->getInfosFicheFraisVisiteur($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
 
-            if ($infosFiche == FALSE) {
+            // On vérifie si une fiche existe pour le visiteur sinon on affiche 00 et on met le reste en disabled
+            if ($pdo->existanceFiche($_SESSION['idVisiteur'], $_SESSION['moisConcerne'])[0] == FALSE) {
                 $libelleEtat = '00';
                 $disabled = 'disabled';
                 // ajouterErreur("Pas de fiche de frais pour ce visiteur ce mois");
@@ -42,19 +41,35 @@ switch ($action) {
             } else {
                 // on instancie la fiche frais
                 $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
-                $infosLignesFF = $pdo->getLignesFF($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
-                // on initialise les informations de la fiche frais pour ensuite appelé les méthodes pour retourner la bonne informations
-                $ficheFrais->initAvecInfosBDD($infosFiche['FICHE_NB_JUSTIFICATIFS'], $infosFiche['FICHE_MONTANT_VALIDE'],  $infosFiche['FICHE_DATE_DERNIERE_MODIF'], $infosFiche['EFF_ID'], $infosFiche['EFF_LIBELLE'], $infosLignesFF, $infosLignesFHF = NULL, $tab = NULL);
+                $ficheFrais->initAvecInfosBDD();
                 $libelleEtat = $ficheFrais->getLibelleEtat();
-                $nbJustificatifs = $ficheFrais->getNbJustificatifs();
                 $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
+                // $lignesFHF = $fiche->getLesInfosFraisHorsForfait();     à faire plus tard
+                $nbJustificatifs = $ficheFrais->getNbJustificatifs();
+
                 include("vues/v_entete.php");
                 include("Vues/v_sommaire.php");
                 include("Vues/v_valideFraisCorpsFiche.php");
                 include("vues/v_pied.php");
             }
+            break;
+        }
+    case 'enregModifFF': {
+            $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
+            $ficheFrais->initAvecInfosBDDSansFF();
 
+            $ficheFrais->ajouterUnFraisForfaitise('ETP', $_REQUEST['txtEtape']);
+            $ficheFrais->ajouterUnFraisForfaitise('KM ', $_REQUEST['txtKm']);
+            $ficheFrais->ajouterUnFraisForfaitise('NUI', $_REQUEST['txtNuitee']);
+            $ficheFrais->ajouterUnFraisForfaitise('REP', $_REQUEST['txtRepas']);
 
+            if ($ficheFrais->controlerQtesFraisForfaitises()) {
+                if ($ficheFrais->mettreAJourLesFraisForfaitises()) {
+                    echo "<h1>La mise à jour a été effectuée</h1>";
+                } else {
+                    include("vues/v_erreurs.php");
+                }
+            }
             break;
         }
         // default: {
