@@ -13,6 +13,7 @@ switch ($action) {
     case 'choixInitialVisiteur': {
             $libelleEtat = '';
             $resultatInfosVisiteur = $pdo->getInfosVisiteur();
+            $disabled = 'disabled';
             include("vues/v_entete.php");
             include("Vues/v_sommaire.php");
             include("Vues/v_valideFraisCorpsFiche.php");
@@ -32,9 +33,10 @@ switch ($action) {
             if ($pdo->existanceFiche($_SESSION['idVisiteur'], $_SESSION['moisConcerne'])[0] == FALSE) {
                 $libelleEtat = '00';
                 $disabled = 'disabled';
-                // ajouterErreur("Pas de fiche de frais pour ce visiteur ce mois");
+                ajouterErreur("Le visiteur n'a pas crée de fiche pour ce mois.");
+
                 include("vues/v_entete.php");
-                // include("vues/v_erreurs.php"); 
+                include("vues/v_erreurs.php");
                 include("Vues/v_sommaire.php");
                 include("Vues/v_valideFraisCorpsFiche.php");
                 include("vues/v_pied.php");
@@ -42,38 +44,187 @@ switch ($action) {
                 // on instancie la fiche frais
                 $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
                 $ficheFrais->initAvecInfosBDD();
+
                 $libelleEtat = $ficheFrais->getLibelleEtat();
                 $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
-                // $lignesFHF = $fiche->getLesInfosFraisHorsForfait();     à faire plus tard
+                $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
                 $nbJustificatifs = $ficheFrais->getNbJustificatifs();
 
                 include("vues/v_entete.php");
                 include("Vues/v_sommaire.php");
+                $idEtat = $ficheFrais->getIdEtat();
+                if (!estDansPeriodeValidation()) {
+                    $disabled = 'disabled';
+                    ajouterErreur("Période en dehors du 10 au 20 du mois, la fiche de frais est simplement consultable.");
+                    include("vues/v_erreurs.php");
+                } elseif ($idEtat == 'CR') {
+
+                    $disabled = 'disabled';
+                    ajouterErreur("La fiche n'est pas clôturée.");
+                    include("vues/v_erreurs.php");
+                } elseif ($idEtat != 'CL') {
+
+                    $disabled = 'disabled';
+                    ajouterErreur("La fiche a déjà été validée.");
+                    include("vues/v_erreurs.php");
+                }
                 include("Vues/v_valideFraisCorpsFiche.php");
                 include("vues/v_pied.php");
             }
             break;
         }
     case 'enregModifFF': {
+            $resultatInfosVisiteur = $pdo->getInfosVisiteur();
             $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
             $ficheFrais->initAvecInfosBDDSansFF();
+            $libelleEtat = $ficheFrais->getLibelleEtat();
+
 
             $ficheFrais->ajouterUnFraisForfaitise('ETP', $_REQUEST['txtEtape']);
             $ficheFrais->ajouterUnFraisForfaitise('KM ', $_REQUEST['txtKm']);
             $ficheFrais->ajouterUnFraisForfaitise('NUI', $_REQUEST['txtNuitee']);
             $ficheFrais->ajouterUnFraisForfaitise('REP', $_REQUEST['txtRepas']);
 
+            $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
+            $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
+            $nbJustificatifs = $ficheFrais->getNbJustificatifs();
+
             if ($ficheFrais->controlerQtesFraisForfaitises()) {
                 if ($ficheFrais->mettreAJourLesFraisForfaitises()) {
-                    echo "<h1>La mise à jour a été effectuée</h1>";
+
+                    $message = "La mise à jour des frais forfaitisés a été effectuée.";
+
+                    include("vues/v_entete.php");
+                    include("vues/v_message.php");
+                    include("Vues/v_sommaire.php");
+                    include("Vues/v_valideFraisCorpsFiche.php");
+                    include("vues/v_pied.php");
                 } else {
+                    include("vues/v_entete.php");
                     include("vues/v_erreurs.php");
+                    include("Vues/v_sommaire.php");
+                    include("Vues/v_valideFraisCorpsFiche.php");
+                    include("vues/v_pied.php");
                 }
             }
             break;
         }
-        // default: {
-        //         include("Vues/v_sommaire.php");
-        //         break;
-        //     }
+
+    case 'enregModifFHF': {
+            $resultatInfosVisiteur = $pdo->getInfosVisiteur();
+            $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
+            $ficheFrais->initAvecInfosBDDSansFHF();
+            $ficheFrais->setNbJustificatifs($_REQUEST['txtHFNbJustificatifsPEC']);
+
+            $libelleEtat = $ficheFrais->getLibelleEtat();
+            $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
+
+
+            $nbFHFSupprime = 0;
+            $nbFHFReporte = 0;
+            foreach ($_REQUEST['tabInfosFHF'] as $uneLigne) {
+
+                if ($uneLigne['rbHFAction'] == 'R') {
+                    $nbFHFReporte = $nbFHFReporte + 1;
+                } elseif ($uneLigne['rbHFAction'] == 'S') {
+                    $nbFHFSupprime = $nbFHFSupprime + 1;
+                }
+                $ficheFrais->ajouterUnFraisHorsForfait($uneLigne['hidHFFraisNum'], $uneLigne['txtHFLibelle'], dateFrancaisVersAnglais($uneLigne['txtHFDate']), $uneLigne['txtHFMontant'], $uneLigne['rbHFAction']);
+            }
+
+            if ($ficheFrais->controlerNbJustificatifs()) {
+                if ($ficheFrais->mettreAJourLesFraisHorsForfait()) {
+
+                    $message = "La mise à jour des frais hors forfait a été effectuée avec " . $nbFHFSupprime . " suppression(s) et " . $nbFHFReporte . " report(s).";
+
+                    $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
+                    $ficheFrais->initAvecInfosBDD();
+                    $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
+                    $nbJustificatifs = $ficheFrais->getNbJustificatifs();
+
+                    include("vues/v_entete.php");
+                    include("vues/v_message.php");
+                    include("Vues/v_sommaire.php");
+                    include("Vues/v_valideFraisCorpsFiche.php");
+                    include("vues/v_pied.php");
+                } else {
+                    include("vues/v_entete.php");
+                    include("vues/v_erreurs.php");
+                    include("Vues/v_sommaire.php");
+                    include("Vues/v_valideFraisCorpsFiche.php");
+                    include("vues/v_pied.php");
+                }
+            } else {
+                ajouterErreur("Le nombre de justificatif n'est pas correct");
+
+                $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
+                $nbJustificatifs = $ficheFrais->getNbJustificatifs();
+                include("vues/v_entete.php");
+                include("vues/v_erreurs.php");
+                include("Vues/v_sommaire.php");
+                include("Vues/v_valideFraisCorpsFiche.php");
+                include("vues/v_pied.php");
+            }
+            break;
+        }
+    case 'validerFicheFrais':
+        $resultatInfosVisiteur = $pdo->getInfosVisiteur();
+
+        $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
+        $ficheFrais->initAvecInfosBDD();
+
+        $libelleEtat = $ficheFrais->getLibelleEtat();
+        $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
+        $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
+
+        // $idEtat = $ficheFrais->getIdEtat();
+        // if ($idEtat == 'CR') {
+        //     ajouterErreur("La fiche n'est pas clôturée.");
+
+        //     include("vues/v_entete.php");
+        //     include("vues/v_erreurs.php");
+        //     include("Vues/v_sommaire.php");
+        //     include("Vues/v_valideFraisCorpsFiche.php");
+        //     include("vues/v_pied.php");
+        // } elseif ($idEtat != 'CL') {
+        //     ajouterErreur("La fiche a déjà été validée.");
+
+        //     include("vues/v_entete.php");
+        //     include("vues/v_erreurs.php");
+        //     include("Vues/v_sommaire.php");
+        //     include("Vues/v_valideFraisCorpsFiche.php");
+        //     include("vues/v_pied.php");
+        // } else {
+        $ficheFrais->setIdEtat('VA');
+        $ficheFrais->setLibelleEtat('Validée');
+
+        $timezone = new DateTimeZone('Europe/Paris');
+        $date = new DateTime('now', $timezone);
+        $dateActuelle = $date->format('Y-m-d');
+        $ficheFrais->setDateModif($dateActuelle);
+
+        $ficheFrais->calculerLeMontantValide();
+
+        $ficheFrais->valider();
+        // on récupére le nouvel état de la fiche et le nb de justificatif 
+        $libelleEtat = $ficheFrais->getLibelleEtat();
+        $nbJustificatifs = $ficheFrais->getNbJustificatifs();
+
+        $message = "La fiche de frais a été validée";
+
+        $disabled = 'disabled';
+        include("vues/v_entete.php");
+        include("vues/v_message.php");
+        include("Vues/v_sommaire.php");
+        include("Vues/v_valideFraisCorpsFiche.php");
+        include("vues/v_pied.php");
+        // }
+        break;
+    default: {
+            include("vues/v_entete.php");
+            include("Vues/v_sommaire.php");
+            include("Vues/v_valideFraisCorpsFiche.php");
+            include("vues/v_pied.php");
+            break;
+        }
 }
