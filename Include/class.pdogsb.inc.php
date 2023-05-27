@@ -101,8 +101,8 @@ class PdoGsb
     public function getInfosComptable($login, $mdp)
     {
         $req = self::$monPdo->prepare("EXEC getInfosComptable :log, :mdp");
-        $req->bindParam(':log', $login);
-        $req->bindParam(':mdp', $mdp);
+        $req->bindParam(':log', $login, PDO::PARAM_STR);
+        $req->bindParam(':mdp', $mdp, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetch();
         return $ligne;
@@ -125,8 +125,8 @@ class PdoGsb
     public function existanceFiche($idVisiteur, $mois)
     {
         $req = self::$monPdo->prepare("EXEC existanceFiche :idVisiteur, :mois");
-        $req->bindParam(':idVisiteur', $idVisiteur);
-        $req->bindParam(':mois', $mois);
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetch(PDO::FETCH_NUM);
         return $ligne;
@@ -143,8 +143,8 @@ class PdoGsb
     public function getInfosFiche($idVisiteur, $mois)
     {
         $req = self::$monPdo->prepare("EXEC getInfosFicheFraisVisiteur :idVisiteur, :mois");
-        $req->bindParam(':idVisiteur', $idVisiteur);
-        $req->bindParam(':mois', $mois);
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetch(PDO::FETCH_ASSOC);
         return $ligne;
@@ -156,7 +156,7 @@ class PdoGsb
     public function getInfosCategorieFrais($idCategorie)
     {
         $req = self::$monPdo->prepare("EXEC SP_CATEGORIE_FF_GET_INFOS :idCategorie");
-        $req->bindParam(':idCategorie', $idCategorie);
+        $req->bindParam(':idCategorie', $idCategorie, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetch(PDO::FETCH_ASSOC);
         return $ligne;
@@ -168,8 +168,8 @@ class PdoGsb
     public function getLignesFF($idVisiteur, $mois)
     {
         $req = self::$monPdo->prepare("EXEC getLignesFF :idVisiteur, :mois");
-        $req->bindParam(':idVisiteur', $idVisiteur);
-        $req->bindParam(':mois', $mois);
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
         return $ligne;
@@ -183,31 +183,28 @@ class PdoGsb
     public function getLignesFHF($idVisiteur, $mois)
     {
         $req = self::$monPdo->prepare("EXEC getLignesFHF :idVisiteur, :mois");
-        $req->bindParam(':idVisiteur', $idVisiteur);
-        $req->bindParam(':mois', $mois);
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
         $req->execute();
 
         /**
          * rowcount() ne fonctionne pas avec sql server visiblement donc on fait ce qui suit :
          */
 
-        $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
-        $rowCount = count($ligne);
+        // $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
+        // $rowCount = count($ligne);
 
-
-        if ($rowCount <= 0) {
-            $ligne = array();
-        }
-
-        // $rowCount = $req->rowCount();
-
-        // if ($rowCount > 0) {
-        //     $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
-        // } else {
+        // if ($rowCount <= 0) {
         //     $ligne = array();
         // }
 
-        return $ligne;
+        // return $ligne;
+
+        if ($req->rowCount() == 0) {
+            return [];
+        } else {
+            return $req->fetchAll(PDO::FETCH_ASSOC);
+        }
     }
 
 
@@ -316,9 +313,11 @@ class PdoGsb
      */
     public function majNbJustificatifs($idVisiteur, $mois, $nbJustificatifs)
     {
-        $req = "update fichefrais set nbjustificatifs = $nbJustificatifs
-		where fichefrais.idvisiteur = '$idVisiteur' and fichefrais.mois = '$mois'";
-        PdoGsb::$monPdo->exec($req);
+        $req = self::$monPdo->prepare("EXEC SP_FICHE_NB_JPEC_MAJ :idVisiteur, :mois, :nbJustificatifs");
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
+        $req->bindParam(':nbJustificatifs', $nbJustificatifs, PDO::PARAM_INT);
+        $req->execute();
     }
 
     /**
@@ -489,10 +488,10 @@ class PdoGsb
 
             foreach ($lesFraisForfaitises as $categorie => $fraisForfait) {
                 $req = self::$monPdo->prepare('EXEC SP_LIGNE_FF_MAJ :idVisiteur, :mois, :quantite, :idCategorie');
-                $req->bindParam(':idVisiteur', $unIdVisiteur);
-                $req->bindParam(':mois', $unMois);
-                $req->bindParam(':quantite', $fraisForfait->getQuantite());
-                $req->bindParam(':idCategorie', $categorie);
+                $req->bindParam(':idVisiteur', $unIdVisiteur, PDO::PARAM_STR);
+                $req->bindParam(':mois', $unMois, PDO::PARAM_STR);
+                $req->bindValue(':quantite', $fraisForfait->getQuantite(), PDO::PARAM_INT);
+                $req->bindParam(':idCategorie', $categorie, PDO::PARAM_STR);
                 $req->execute();
             }
 
@@ -524,5 +523,95 @@ class PdoGsb
      */
     public function setLesFraisHorsForfait($unIdVisiteur, $unMois, $lesFraisHorsForfait, $nbJustificatifsPEC)
     {
+        try {
+            self::$monPdo->beginTransaction();
+
+            $requeteSupprimer = self::$monPdo->prepare('EXEC SP_LIGNE_FHF_SUPPRIME :idVisiteur, :mois, :numFrais');
+            $requeteSupprimer->bindParam(':idVisiteur', $unIdVisiteur, PDO::PARAM_STR);
+            $requeteSupprimer->bindParam(':mois', $unMois, PDO::PARAM_STR);
+            $requeteSupprimer->bindParam(':numFrais', $unNumFrais, PDO::PARAM_INT);
+
+            $requeteReporter = self::$monPdo->prepare('EXEC SP_LIGNE_FHF_REPORTE :idVisiteur, :mois, :numFrais');
+            $requeteReporter->bindParam(':idVisiteur', $unIdVisiteur, PDO::PARAM_STR);
+            $requeteReporter->bindParam(':mois', $unMois, PDO::PARAM_STR);
+            $requeteReporter->bindParam(':numFrais', $unNumFrais, PDO::PARAM_INT);
+
+            foreach ($lesFraisHorsForfait as $unNumFrais => $uneAction) {
+                switch ($uneAction) {
+                    case 'S':
+                        try {
+                            $requeteSupprimer->execute();
+                        } catch (Exception $e) {
+                            self::$monPdo->rollback();
+                            $errorMessage = "Erreur lors de la suppression d'une ligne de frais hors forfait : " . $e->getMessage();
+                            ajouterErreur($errorMessage);
+                            return false;
+                        }
+                        break;
+                    case 'R':
+                        try {
+                            $requeteReporter->execute();
+                        } catch (Exception $e) {
+                            self::$monPdo->rollback();
+                            $errorMessage = "Erreur lors du report d'une ligne de frais hors forfait : " . $e->getMessage();
+                            ajouterErreur($errorMessage);
+                            return false;
+                        }
+                        break;
+                }
+            }
+
+            $this->majNbJustificatifs($unIdVisiteur, $unMois, $nbJustificatifsPEC);
+
+            self::$monPdo->commit();
+            return true;
+        } catch (PDOException $e) {
+            self::$monPdo->rollback();
+            $errorMessage = "Erreur lors de la mise à jour des frais hors forfait : " . $e->getMessage();
+            ajouterErreur($errorMessage);
+            return false;
+        }
+    }
+
+    public function validerFicheFrais($idVisiteur, $mois, $montantValide, $idEtat, $dateDerniereModif)
+    {
+        $req = self::$monPdo->prepare("EXEC SP_FICHE_VALIDE :idVisiteur, :mois, :montantValide, :idEtat, :dateDerniereModif");
+        $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
+        $req->bindParam(':montantValide', $montantValide, PDO::PARAM_STR);
+        $req->bindParam(':idEtat', $idEtat, PDO::PARAM_STR);
+        $req->bindParam(':dateDerniereModif', $dateDerniereModif, PDO::PARAM_STR);
+        $req->execute();
+        $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
+        return $ligne;
+    }
+
+    /**
+     * Détermine le nombre de fiches à clôturer pour le mois passé en paramètre
+     *  @return int le nb de fiche à cloturer ['NombreFicheACloturer']
+     */
+    public function NbFicheACloturer($mois)
+    {
+        $req = self::$monPdo->prepare("EXEC F_FICHE_A_CLOTURER_NB :mois");
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
+        $req->execute();
+        $ligne = $req->fetch(PDO::FETCH_ASSOC);
+
+        return $ligne['NombreFicheACloturer'];
+    }
+
+    /**
+     * Retourne le nombre de fiches clôturées pour le mois passé en paramètre
+     *  @return int le nb de fiche clôturées ['NombreFichesCloturees']
+     */
+    public function cloturerFiche($mois)
+    {
+        $req = self::$monPdo->prepare("EXEC SP_CLOTURER_FICHE :mois");
+        $req->bindParam(':mois', $mois, PDO::PARAM_STR);
+        $req->execute();
+
+        $nombreFichesCloturees = $req->rowCount();
+
+        return $nombreFichesCloturees;
     }
 }

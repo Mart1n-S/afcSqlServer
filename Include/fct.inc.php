@@ -216,3 +216,19 @@ function nbErreurs()
 		return count($_REQUEST['erreurs']);
 	}
 }
+
+/**
+ * Vérifie si la validation s'effectue dans la bonne période 
+ * @return bool True : bonne période / False : Mauvaise période
+ */
+function estDansPeriodeValidation()
+{
+	$jour = date('j'); // Récupère le jour du mois en cours
+
+	// Vérifie si le jour fait partie de la période de validation (10 et 20 inclus)
+	if ($jour >= 10 && $jour <= 20) {
+		return true; // La date est dans la période de validation
+	} else {
+		return false; // La date est en dehors de la période de validation
+	}
+}

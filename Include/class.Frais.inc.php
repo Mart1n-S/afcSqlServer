@@ -61,7 +61,7 @@ abstract class Frais
      * Méthode abstraite qui doit être implémentée dans les classes qui héritent de celle-ci.
      * Elle permet de calculer le montant du frais.
      */
-    // abstract public function getMontant();
+    abstract public function getMontant();
 }
 
 /**
@@ -129,7 +129,7 @@ final class FraisHorsForfait extends Frais
     private $libelle;
     private $date;
     private $montant;
-    // private $action;
+    private $action;
 
     /**
      * Constructeur de la classe FraisHorsForfait.
@@ -141,14 +141,14 @@ final class FraisHorsForfait extends Frais
      * $uneDate La date du frais hors forfait.
      * $unMontant Le montant du frais hors forfait.
      */
-    public function __construct($unIdVisiteur, $unMoisFicheFrais, $unNumFrais, $unLibelle, $uneDate, $unMontant)
+    public function __construct($unIdVisiteur, $unMoisFicheFrais, $unNumFrais, $unLibelle, $uneDate, $unMontant, $uneAction = "O")
     {
         // Appel au constructeur de la classe parente
         parent::__construct($unIdVisiteur, $unMoisFicheFrais, $unNumFrais);
         $this->libelle = $unLibelle;
         $this->date = $uneDate;
         $this->montant = $unMontant;
-        // $this->action = $action;
+        $this->action = $uneAction;
     }
 
     // Accesseur en lecture pour le libellé
@@ -173,8 +173,8 @@ final class FraisHorsForfait extends Frais
     }
 
     // Accesseur en lecture pour l'action
-    // public function getAction()
-    // {
-    //     return $this->action;
-    // }
+    public function getAction()
+    {
+        return $this->action;
+    }
 }

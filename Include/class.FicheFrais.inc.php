@@ -57,10 +57,18 @@ final class FicheFrais
         $this->initLesFraisHorsForfait();
     }
 
+    // initialise sans les FF
     public function initAvecInfosBDDSansFF()
     {
         $this->initInfosFicheSansLesFrais();
         $this->initLesFraisHorsForfait();
+    }
+
+    // initialise sans les FHF
+    public function initAvecInfosBDDSansFHF()
+    {
+        $this->initInfosFicheSansLesFrais();
+        $this->initLesFraisForfaitises();
     }
 
     private function initInfosFicheSansLesFrais()
@@ -103,11 +111,35 @@ final class FicheFrais
     }
 
     /**
+     * retourne id de la fiche
+     */
+    public function getIdEtat()
+    {
+        return $this->idEtat;
+    }
+
+    /**
      * retourne le nombre de justificatifs
      */
     public function getNbJustificatifs()
     {
         return $this->nbJustificatifs;
+    }
+
+    /**
+     * Met à jour le nombre de justificatifs
+     */
+    public function setNbJustificatifs($unNbJustificatifs)
+    {
+        $this->nbJustificatifs = $unNbJustificatifs;
+    }
+
+    /**
+     * Contrôle du type de justificatif (entier)
+     */
+    public function controlerNbJustificatifs()
+    {
+        return estEntierPositif($this->nbJustificatifs);
     }
     /**
      *
@@ -140,6 +172,7 @@ final class FicheFrais
      */
     public function ajouterUnFraisHorsForfait($numFrais, $libelle, $date, $montant, $action = NULL)
     {
+        $this->lesFraisHorsForfait[] = new FraisHorsForfait($this->idVisiteur, $this->moisFiche, $numFrais, $libelle, $date, $montant,  $action);
     }
 
     /**
@@ -191,12 +224,24 @@ final class FicheFrais
      * - le numéro du frais (numFrais),
      * - son libellé (libelle),
      * - sa date (date),
-     * - son montant (montant).
-     *
+     * - son montant (montant),
+     * - l'action à réaliser(action).
      * @return array Le tableau demandé.
      */
     public function getLesInfosFraisHorsForfait()
     {
+        $tabInfosFHF = [];
+
+        foreach ($this->lesFraisHorsForfait as $FHF) {
+            $tabInfosFHF[] = [
+                'numFrais' => $FHF->getNumFrais(),
+                'libelle' => $FHF->getLibelle(),
+                'date' => dateAnglaisVersFrancais($FHF->getDate()),
+                'montant' => $FHF->getMontant(),
+                'action' => $FHF->getAction()
+            ];
+        }
+        return $tabInfosFHF;
     }
 
     /**
@@ -244,5 +289,54 @@ final class FicheFrais
     public function mettreAJourLesFraisForfaitises()
     {
         return self::$pdo->setLesQuantitesFraisForfaitises($this->idVisiteur, $this->moisFiche, $this->lesFraisForfaitises) ? true : false;
+    }
+
+    /**
+     *
+     * Met à jour dans la base de données les frais hors forfait.
+     *
+     * @return bool Le résultat de la mise à jour.
+     *
+     */
+    public function mettreAJourLesFraisHorsForfait()
+    {
+        foreach ($this->lesFraisHorsForfait as $unFrais) {
+            $tableau[$unFrais->getNumFrais()] = $unFrais->getAction();
+        }
+        return  self::$pdo->setLesFraisHorsForfait($this->idVisiteur, $this->moisFiche, $tableau, $this->nbJustificatifs);
+    }
+
+    public function calculerLeMontantValide()
+    {
+        $frais = array_merge($this->lesFraisForfaitises, $this->lesFraisHorsForfait);
+        $montantValide = 0;
+
+        foreach ($frais as $fraisItem) {
+            if ($fraisItem instanceof FraisForfaitise || ($fraisItem instanceof FraisHorsForfait && $fraisItem->getAction() == 'O')) {
+                $montantValide += $fraisItem->getMontant();
+            }
+        }
+
+        $this->montantValide = $montantValide;
+    }
+
+    public function setIdEtat($unID)
+    {
+        $this->idEtat = $unID;
+    }
+
+    public function setLibelleEtat($unLibelle)
+    {
+        $this->libelleEtat = $unLibelle;
+    }
+
+    public function setDateModif($uneDateDerniereModif)
+    {
+        $this->dateDerniereModif = $uneDateDerniereModif;
+    }
+
+    public function valider()
+    {
+        self::$pdo->validerFicheFrais($this->idVisiteur, $this->moisFiche, $this->montantValide, $this->idEtat, $this->dateDerniereModif);
     }
 }

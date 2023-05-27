@@ -24,6 +24,22 @@ switch ($uc) {
             include("controleurs/c_valideFrais.php");
             break;
         }
+    case 'cloturerSaisieFichesFrais': {
+
+            if (isset($_POST['BtnOui'])) {
+                include('controleurs/c_clotureFicheSaisie.php');
+            } else {
+                if (isset($_POST['BtnNon'])) {
+                    $titlePage = 'Intranet du Laboratoire Galaxy-Swiss Bourdin';
+                    include("vues/v_entete.php");
+                    include("vues/v_sommaire.php");
+                    include("vues/v_pied.php");
+                } else {
+                    include('controleurs/c_clotureFicheSaisie.php');
+                }
+            }
+            break;
+        }
         //	case 'gererFrais' :{
         //		include("controleurs/c_gererFrais.php");break;
         //	}
