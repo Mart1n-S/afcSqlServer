@@ -573,6 +573,9 @@ class PdoGsb
         }
     }
 
+    /**
+     * Valide et met à jour une fiche de frais 
+     */
     public function validerFicheFrais($idVisiteur, $mois, $montantValide, $idEtat, $dateDerniereModif)
     {
         $req = self::$monPdo->prepare("EXEC SP_FICHE_VALIDE :idVisiteur, :mois, :montantValide, :idEtat, :dateDerniereModif");

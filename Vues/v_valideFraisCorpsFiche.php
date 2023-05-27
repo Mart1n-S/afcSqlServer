@@ -17,7 +17,6 @@
 
            <label for="txtMoisFiche">Mois : </label>
            <input type="text" name="txtMoisFiche" id="txtMoisFiche" value="<?= $moisConcerne; ?>" readonly="readonly" />
-           <!-- <input type="text" name="txtMoisFiche" id="txtMoisFiche" value="201001" readonly="readonly" /> -->
            <input type="submit" id="btnOk" name="btnOk" value="Ok" tabindex="20" />
        </form>
        <br />

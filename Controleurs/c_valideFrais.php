@@ -41,7 +41,7 @@ switch ($action) {
                 include("Vues/v_valideFraisCorpsFiche.php");
                 include("vues/v_pied.php");
             } else {
-                // on instancie la fiche frais
+                // sinon on instancie la fiche frais
                 $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
                 $ficheFrais->initAvecInfosBDD();
 
@@ -53,6 +53,9 @@ switch ($action) {
                 include("vues/v_entete.php");
                 include("Vues/v_sommaire.php");
                 $idEtat = $ficheFrais->getIdEtat();
+                // On vérifie qu'on se trouve dans la période autorisé pour la validation de fiche de frais sinon on laisse l'accés en lecture seule
+                // Si on est dans la bonne période on vérifie que la fiche à bien un idEtat à CL(cloturée) si idEtat correspond a Saisie en cours on met en lecture seule et indique qu'il faut d'abord cloturer les fiches
+                // Si idEtat correspond ni à Cloturée ni à Saisie en cours on met la fiche en lecture seule en indiquant qu'elle à déjà été validé
                 if (!estDansPeriodeValidation()) {
                     $disabled = 'disabled';
                     ajouterErreur("Période en dehors du 10 au 20 du mois, la fiche de frais est simplement consultable.");
@@ -79,7 +82,7 @@ switch ($action) {
             $ficheFrais->initAvecInfosBDDSansFF();
             $libelleEtat = $ficheFrais->getLibelleEtat();
 
-
+            // On prépare les frais forfaitise qui vont être mis à jour
             $ficheFrais->ajouterUnFraisForfaitise('ETP', $_REQUEST['txtEtape']);
             $ficheFrais->ajouterUnFraisForfaitise('KM ', $_REQUEST['txtKm']);
             $ficheFrais->ajouterUnFraisForfaitise('NUI', $_REQUEST['txtNuitee']);
@@ -89,6 +92,7 @@ switch ($action) {
             $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
             $nbJustificatifs = $ficheFrais->getNbJustificatifs();
 
+            // On vérifie que les frais forfaitisés sont des entiers puis on les mets à jour
             if ($ficheFrais->controlerQtesFraisForfaitises()) {
                 if ($ficheFrais->mettreAJourLesFraisForfaitises()) {
 
@@ -119,7 +123,8 @@ switch ($action) {
             $libelleEtat = $ficheFrais->getLibelleEtat();
             $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
 
-
+            // On prépare les frais hors forfait qui vont être mis à jour et on incrémente un compteur pour les FHF qui sont supprimé ou reporté 
+            // afin d'indiquer dans le message de réussite combien ont été Supprimé ou reporté
             $nbFHFSupprime = 0;
             $nbFHFReporte = 0;
             foreach ($_REQUEST['tabInfosFHF'] as $uneLigne) {
@@ -131,12 +136,17 @@ switch ($action) {
                 }
                 $ficheFrais->ajouterUnFraisHorsForfait($uneLigne['hidHFFraisNum'], $uneLigne['txtHFLibelle'], dateFrancaisVersAnglais($uneLigne['txtHFDate']), $uneLigne['txtHFMontant'], $uneLigne['rbHFAction']);
             }
-
+            // On contrôle le nombre de justificatif si c'est bien un entier puis on met à jour les FHF (qui comprend aussi le nombre de justificatifs)
             if ($ficheFrais->controlerNbJustificatifs()) {
                 if ($ficheFrais->mettreAJourLesFraisHorsForfait()) {
 
-                    $message = "La mise à jour des frais hors forfait a été effectuée avec " . $nbFHFSupprime . " suppression(s) et " . $nbFHFReporte . " report(s).";
+                    if ($nbFHFSupprime != 0 || $nbFHFReporte != 0) {
+                        $message = "La mise à jour des frais hors forfait a été effectuée avec " . $nbFHFSupprime . " suppression(s) et " . $nbFHFReporte . " report(s).";
+                    } else {
+                        $message = "La mise à jour du nombre de justificatifs a été effectuée.";
+                    }
 
+                    // Ici on instancie une nouvelle fiche de frais avec les informations mis à jour pour les réafficher
                     $ficheFrais = new FicheFrais($_SESSION['idVisiteur'], $_SESSION['moisConcerne']);
                     $ficheFrais->initAvecInfosBDD();
                     $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
@@ -177,27 +187,11 @@ switch ($action) {
         $quantitesDeFraisForfaitises = $ficheFrais->getLesQuantitesDeFraisForfaitises();
         $lignesFHF = $ficheFrais->getLesInfosFraisHorsForfait();
 
-        // $idEtat = $ficheFrais->getIdEtat();
-        // if ($idEtat == 'CR') {
-        //     ajouterErreur("La fiche n'est pas clôturée.");
-
-        //     include("vues/v_entete.php");
-        //     include("vues/v_erreurs.php");
-        //     include("Vues/v_sommaire.php");
-        //     include("Vues/v_valideFraisCorpsFiche.php");
-        //     include("vues/v_pied.php");
-        // } elseif ($idEtat != 'CL') {
-        //     ajouterErreur("La fiche a déjà été validée.");
-
-        //     include("vues/v_entete.php");
-        //     include("vues/v_erreurs.php");
-        //     include("Vues/v_sommaire.php");
-        //     include("Vues/v_valideFraisCorpsFiche.php");
-        //     include("vues/v_pied.php");
-        // } else {
+        // On prépare le changement d'état de la fiche (id + libellé)
         $ficheFrais->setIdEtat('VA');
         $ficheFrais->setLibelleEtat('Validée');
 
+        // calcul de la date actuel pour modifier la date de dernière modification -> peut être fait direct en sql 
         $timezone = new DateTimeZone('Europe/Paris');
         $date = new DateTime('now', $timezone);
         $dateActuelle = $date->format('Y-m-d');
@@ -205,11 +199,13 @@ switch ($action) {
 
         $ficheFrais->calculerLeMontantValide();
 
+        // Validation de la fiche de frais 
         $ficheFrais->valider();
         // on récupére le nouvel état de la fiche et le nb de justificatif 
         $libelleEtat = $ficheFrais->getLibelleEtat();
         $nbJustificatifs = $ficheFrais->getNbJustificatifs();
 
+        // On réaffiche la fiche de frais en lecture seule
         $message = "La fiche de frais a été validée";
 
         $disabled = 'disabled';
@@ -218,7 +214,7 @@ switch ($action) {
         include("Vues/v_sommaire.php");
         include("Vues/v_valideFraisCorpsFiche.php");
         include("vues/v_pied.php");
-        // }
+
         break;
     default: {
             include("vues/v_entete.php");

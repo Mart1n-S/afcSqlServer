@@ -306,6 +306,9 @@ final class FicheFrais
         return  self::$pdo->setLesFraisHorsForfait($this->idVisiteur, $this->moisFiche, $tableau, $this->nbJustificatifs);
     }
 
+    /**
+     * Calcule le montant valide en s'assurant pour les FHF qu'ils ont bien action == 'O'
+     */
     public function calculerLeMontantValide()
     {
         $frais = array_merge($this->lesFraisForfaitises, $this->lesFraisHorsForfait);
@@ -320,21 +323,33 @@ final class FicheFrais
         $this->montantValide = $montantValide;
     }
 
+    /**
+     * Met à jour l'id de l'état VA / RB / CL etc... 
+     */
     public function setIdEtat($unID)
     {
         $this->idEtat = $unID;
     }
 
+    /**
+     * Met à jour le libellé de l'état Validée / Remboursée / Cloturée etc... 
+     */
     public function setLibelleEtat($unLibelle)
     {
         $this->libelleEtat = $unLibelle;
     }
 
+    /**
+     * Met à jour la date de dernière modification 
+     */
     public function setDateModif($uneDateDerniereModif)
     {
         $this->dateDerniereModif = $uneDateDerniereModif;
     }
 
+    /**
+     * Valide une fice de frais 
+     */
     public function valider()
     {
         self::$pdo->validerFicheFrais($this->idVisiteur, $this->moisFiche, $this->montantValide, $this->idEtat, $this->dateDerniereModif);

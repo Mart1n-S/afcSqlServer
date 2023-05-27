@@ -34,6 +34,7 @@ switch ($action) {
             }
             break;
         }
+        // On cloture les fiche qui ont 'Saisie en cours' afin de pouvoir les traiter dans 'Valider Fiche de Frais'
     case 'traiterReponseClotureFiches': {
             $nbFicheCloturees = $pdo->cloturerFiche(moisConcerne());
             $message = "Le nombres de fiches cloturées est de : " . $nbFicheCloturees . ' fiches.';
