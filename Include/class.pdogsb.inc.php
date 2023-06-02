@@ -576,14 +576,13 @@ class PdoGsb
     /**
      * Valide et met à jour une fiche de frais 
      */
-    public function validerFicheFrais($idVisiteur, $mois, $montantValide, $idEtat, $dateDerniereModif)
+    public function validerFicheFrais($idVisiteur, $mois, $montantValide, $idEtat)
     {
-        $req = self::$monPdo->prepare("EXEC SP_FICHE_VALIDE :idVisiteur, :mois, :montantValide, :idEtat, :dateDerniereModif");
+        $req = self::$monPdo->prepare("EXEC SP_FICHE_VALIDE :idVisiteur, :mois, :montantValide, :idEtat");
         $req->bindParam(':idVisiteur', $idVisiteur, PDO::PARAM_STR);
         $req->bindParam(':mois', $mois, PDO::PARAM_STR);
         $req->bindParam(':montantValide', $montantValide, PDO::PARAM_STR);
         $req->bindParam(':idEtat', $idEtat, PDO::PARAM_STR);
-        $req->bindParam(':dateDerniereModif', $dateDerniereModif, PDO::PARAM_STR);
         $req->execute();
         $ligne = $req->fetchALL(PDO::FETCH_ASSOC);
         return $ligne;

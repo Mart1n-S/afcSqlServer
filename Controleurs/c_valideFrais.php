@@ -191,12 +191,6 @@ switch ($action) {
         $ficheFrais->setIdEtat('VA');
         $ficheFrais->setLibelleEtat('Validée');
 
-        // calcul de la date actuel pour modifier la date de dernière modification -> peut être fait direct en sql 
-        $timezone = new DateTimeZone('Europe/Paris');
-        $date = new DateTime('now', $timezone);
-        $dateActuelle = $date->format('Y-m-d');
-        $ficheFrais->setDateModif($dateActuelle);
-
         $ficheFrais->calculerLeMontantValide();
 
         // Validation de la fiche de frais 

@@ -340,18 +340,10 @@ final class FicheFrais
     }
 
     /**
-     * Met à jour la date de dernière modification 
-     */
-    public function setDateModif($uneDateDerniereModif)
-    {
-        $this->dateDerniereModif = $uneDateDerniereModif;
-    }
-
-    /**
      * Valide une fice de frais 
      */
     public function valider()
     {
-        self::$pdo->validerFicheFrais($this->idVisiteur, $this->moisFiche, $this->montantValide, $this->idEtat, $this->dateDerniereModif);
+        self::$pdo->validerFicheFrais($this->idVisiteur, $this->moisFiche, $this->montantValide, $this->idEtat);
     }
 }
