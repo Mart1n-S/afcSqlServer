@@ -44,10 +44,4 @@ switch ($uc) {
             }
             break;
         }
-        //	case 'gererFrais' :{
-        //		include("controleurs/c_gererFrais.php");break;
-        //	}
-        //	case 'etatFrais' :{
-        //		include("controleurs/c_etatFrais.php");break;
-        //	}
 }
