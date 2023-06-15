@@ -3,6 +3,7 @@
 require_once './Include/class.pdogsb.inc.php';
 require_once './Include/fct.inc.php';
 require_once './Include/class.Frais.inc.php';
+require_once './Include/class.CategorieFraisForfaitise.inc.php';
 
 final class FicheFrais
 {
@@ -14,7 +15,7 @@ final class FicheFrais
     private $dateDerniereModif;
     private $idEtat;
     private $libelleEtat;
-
+    private static $pdo;
     /**
      * On utilise 2 collections pour stocker les frais :
      * plus efficace car on doit extraire soit les FF soit les FHF.
@@ -34,12 +35,12 @@ final class FicheFrais
      */
     static private $tabNumLigneFraisForfaitise = [
         'ETP' => 1,
-        'KM' => 2,
+        'KM ' => 2,
         'NUI' => 3,
         'REP' => 4
     ];
 
-    private static $pdo;
+
 
     function __construct($unIdVisiteur, $unMoisFiche)
     {
@@ -48,48 +49,57 @@ final class FicheFrais
         self::$pdo = PdoGsb::getPdoGsb();
     }
 
-    public function initAvecInfosBDD($unNombreDeJustificatifs, $unMontantValide, $uneDateDerniereModif, $unIdEtat, $unLibelleEtat, $lesFraisForfaitises, $lesFraisHorsForfait, $unTabNumLigneFraisForfaitise)
+    public function initAvecInfosBDD()
     {
-
         // Initialisation des informations de la fiche
-        $this->nbJustificatifs = $unNombreDeJustificatifs;
-        $this->montantValide = $unMontantValide;
-        $this->dateDerniereModif = $uneDateDerniereModif;
-        $this->idEtat = $unIdEtat;
-        $this->libelleEtat = $unLibelleEtat;
-        $this->lesFraisForfaitises = $lesFraisForfaitises;
-        $this->lesFraisHorsForfait = $lesFraisHorsForfait;
-        self::$tabNumLigneFraisForfaitise = $unTabNumLigneFraisForfaitise;
+        $this->initInfosFicheSansLesFrais();
+        $this->initLesFraisForfaitises();
+        $this->initLesFraisHorsForfait();
     }
 
-    public function initAvecInfosBDDSansFF($unNombreDeJustificatifs, $unMontantValide, $uneDateDerniereModif, $unIdEtat, $unLibelleEtat, $lesFraisHorsForfait)
+    // initialise sans les FF
+    public function initAvecInfosBDDSansFF()
     {
-        $this->nbJustificatifs = $unNombreDeJustificatifs;
-        $this->montantValide = $unMontantValide;
-        $this->dateDerniereModif = $uneDateDerniereModif;
-        $this->idEtat = $unIdEtat;
-        $this->libelleEtat = $unLibelleEtat;
-        $this->lesFraisHorsForfait = $lesFraisHorsForfait;
+        $this->initInfosFicheSansLesFrais();
+        $this->initLesFraisHorsForfait();
     }
 
-    public function initInfosFicheSansLesFrais($unNombreDeJustificatifs, $uneDateDerniereModif, $unIdEtat, $unLibelleEtat)
+    // initialise sans les FHF
+    public function initAvecInfosBDDSansFHF()
     {
-
-        $this->nbJustificatifs = $unNombreDeJustificatifs;
-        $this->dateDerniereModif = $uneDateDerniereModif;
-        $this->idEtat = $unIdEtat;
-        $this->libelleEtat = $unLibelleEtat;
+        $this->initInfosFicheSansLesFrais();
+        $this->initLesFraisForfaitises();
     }
 
-    public function initLesFraisForfaitises($lesFraisForfaitises, $unTabNumLigneFraisForfaitise)
+    private function initInfosFicheSansLesFrais()
     {
-        $this->lesFraisForfaitises = $lesFraisForfaitises;
-        $this->tabNumLigneFraisForfaitise = $unTabNumLigneFraisForfaitise;
+        $info = self::$pdo->getInfosFiche($this->idVisiteur, $this->moisFiche);
+
+        $this->idEtat = $info['EFF_ID'];
+        $this->libelleEtat = $info['EFF_LIBELLE'];
+        $this->nbJustificatifs = $info['FICHE_NB_JUSTIFICATIFS'];
+        $this->montantValide = $info['FICHE_MONTANT_VALIDE'];
+        $this->dateDerniereModif = $info['FICHE_DATE_DERNIERE_MODIF'];
     }
 
-    public function initLesFraisHorsForfait($lesFraisHorsForfait)
+    private function initLesFraisForfaitises()
     {
-        $this->lesFraisHorsForfait = $lesFraisHorsForfait;
+        $lignes = self::$pdo->getLignesFF($this->idVisiteur, $this->moisFiche);
+
+        foreach ($lignes as $uneLigne) {
+            $unFraisForfaitise = new FraisForfaitise($this->idVisiteur, $this->moisFiche, $uneLigne['FRAIS_NUM'], $uneLigne['LFF_QTE'], new CategorieFraisForfaitise($uneLigne['CFF_ID']));
+            $this->lesFraisForfaitises[$uneLigne['CFF_ID']] = $unFraisForfaitise;
+        }
+    }
+
+    private function initLesFraisHorsForfait()
+    {
+        $lignes = self::$pdo->getLignesFHF($this->idVisiteur, $this->moisFiche);
+
+        foreach ($lignes as $uneLigne) {
+            $unFraisHorsForfait = new FraisHorsForfait($this->idVisiteur, $this->moisFiche, $uneLigne['FRAIS_NUM'], $uneLigne['LFHF_LIBELLE'], $uneLigne['LFHF_DATE'], $uneLigne['LFHF_MONTANT']);
+            $this->lesFraisHorsForfait[] = $unFraisHorsForfait;
+        }
     }
 
     /**
@@ -101,11 +111,35 @@ final class FicheFrais
     }
 
     /**
+     * retourne id de la fiche
+     */
+    public function getIdEtat()
+    {
+        return $this->idEtat;
+    }
+
+    /**
      * retourne le nombre de justificatifs
      */
     public function getNbJustificatifs()
     {
         return $this->nbJustificatifs;
+    }
+
+    /**
+     * Met à jour le nombre de justificatifs
+     */
+    public function setNbJustificatifs($unNbJustificatifs)
+    {
+        $this->nbJustificatifs = $unNbJustificatifs;
+    }
+
+    /**
+     * Contrôle du type de justificatif (entier)
+     */
+    public function controlerNbJustificatifs()
+    {
+        return estEntierPositif($this->nbJustificatifs);
     }
     /**
      *
@@ -119,6 +153,8 @@ final class FicheFrais
      */
     public function ajouterUnFraisForfaitise($idCategorie, $quantite)
     {
+        $numFrais = $this->getNumLigneFraisForfaitise($idCategorie);
+        $this->lesFraisForfaitises[$idCategorie] = new FraisForfaitise($this->idVisiteur, $this->moisFiche, $numFrais, $quantite, new CategorieFraisForfaitise($idCategorie));
     }
 
     /**
@@ -136,6 +172,7 @@ final class FicheFrais
      */
     public function ajouterUnFraisHorsForfait($numFrais, $libelle, $date, $montant, $action = NULL)
     {
+        $this->lesFraisHorsForfait[] = new FraisHorsForfait($this->idVisiteur, $this->moisFiche, $numFrais, $libelle, $date, $montant,  $action);
     }
 
     /**
@@ -163,7 +200,10 @@ final class FicheFrais
     // } version V1
     public function getLesQuantitesDeFraisForfaitises()
     {
-        return $this->lesFraisForfaitises;
+        foreach (self::$tabNumLigneFraisForfaitise as $cle => $valeur) {
+            $tableau[] = $this->lesFraisForfaitises[$cle]->getQuantite();
+        }
+        return $tableau;
     }
 
     /**
@@ -184,12 +224,24 @@ final class FicheFrais
      * - le numéro du frais (numFrais),
      * - son libellé (libelle),
      * - sa date (date),
-     * - son montant (montant).
-     *
+     * - son montant (montant),
+     * - l'action à réaliser(action).
      * @return array Le tableau demandé.
      */
     public function getLesInfosFraisHorsForfait()
     {
+        $tabInfosFHF = [];
+
+        foreach ($this->lesFraisHorsForfait as $FHF) {
+            $tabInfosFHF[] = [
+                'numFrais' => $FHF->getNumFrais(),
+                'libelle' => $FHF->getLibelle(),
+                'date' => dateAnglaisVersFrancais($FHF->getDate()),
+                'montant' => $FHF->getMontant(),
+                'action' => $FHF->getAction()
+            ];
+        }
+        return $tabInfosFHF;
     }
 
     /**
@@ -211,6 +263,7 @@ final class FicheFrais
      */
     private function getNumLigneFraisForfaitise($idCategorieFraisForfaitise)
     {
+        return self::$tabNumLigneFraisForfaitise[$idCategorieFraisForfaitise];
     }
 
     /**
@@ -223,6 +276,7 @@ final class FicheFrais
      */
     public function controlerQtesFraisForfaitises()
     {
+        return lesQteFraisValides($this->getLesQuantitesDeFraisForfaitises());
     }
 
     /**
@@ -234,5 +288,62 @@ final class FicheFrais
      */
     public function mettreAJourLesFraisForfaitises()
     {
+        return self::$pdo->setLesQuantitesFraisForfaitises($this->idVisiteur, $this->moisFiche, $this->lesFraisForfaitises) ? true : false;
+    }
+
+    /**
+     *
+     * Met à jour dans la base de données les frais hors forfait.
+     *
+     * @return bool Le résultat de la mise à jour.
+     *
+     */
+    public function mettreAJourLesFraisHorsForfait()
+    {
+        foreach ($this->lesFraisHorsForfait as $unFrais) {
+            $tableau[$unFrais->getNumFrais()] = $unFrais->getAction();
+        }
+        return  self::$pdo->setLesFraisHorsForfait($this->idVisiteur, $this->moisFiche, $tableau, $this->nbJustificatifs);
+    }
+
+    /**
+     * Calcule le montant valide en s'assurant pour les FHF qu'ils ont bien action == 'O'
+     */
+    public function calculerLeMontantValide()
+    {
+        $frais = array_merge($this->lesFraisForfaitises, $this->lesFraisHorsForfait);
+        $montantValide = 0;
+
+        foreach ($frais as $fraisItem) {
+            if ($fraisItem instanceof FraisForfaitise || ($fraisItem instanceof FraisHorsForfait && $fraisItem->getAction() == 'O')) {
+                $montantValide += $fraisItem->getMontant();
+            }
+        }
+
+        $this->montantValide = $montantValide;
+    }
+
+    /**
+     * Met à jour l'id de l'état VA / RB / CL etc... 
+     */
+    public function setIdEtat($unID)
+    {
+        $this->idEtat = $unID;
+    }
+
+    /**
+     * Met à jour le libellé de l'état Validée / Remboursée / Cloturée etc... 
+     */
+    public function setLibelleEtat($unLibelle)
+    {
+        $this->libelleEtat = $unLibelle;
+    }
+
+    /**
+     * Valide une fice de frais 
+     */
+    public function valider()
+    {
+        self::$pdo->validerFicheFrais($this->idVisiteur, $this->moisFiche, $this->montantValide, $this->idEtat);
     }
 }
