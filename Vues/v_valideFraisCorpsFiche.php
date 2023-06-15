@@ -17,14 +17,16 @@
 
            <label for="txtMoisFiche">Mois : </label>
            <input type="text" name="txtMoisFiche" id="txtMoisFiche" value="<?= $moisConcerne; ?>" readonly="readonly" />
-           <!-- <input type="text" name="txtMoisFiche" id="txtMoisFiche" value="201001" readonly="readonly" /> -->
            <input type="submit" id="btnOk" name="btnOk" value="Ok" tabindex="20" />
        </form>
        <br />
        <br />
 
        <?php
+        //    si il ne faut afficher que la liste déroulante au début il suffit de décommenter la ligne 
+        // if (isset($_POST['listeVisiteur'])) {
         include('Vues/v_valideFraisEtatFicheFrais.php');
         include('Vues/v_valideFraisForfait.php');
         include('Vues/v_valideFraisHorsForfait.php');
         include('Vues/v_valideFraisValider.php');
+        // }
