@@ -1,5 +1,5 @@
 <h1 align="center">AFC</h1>
-<blockquote align="center"><h3>Application des Frais Comptables</h3></blockquote>
+<blockquote align="center"><h3>Application des Frais Comptables</h3></blockquote><br>
 
 <p align="center">
   <img src="https://www.vectorlogo.zone/logos/php/php-ar21.svg" alt="PHP Logo" height="80"/>
@@ -12,8 +12,7 @@
 <div align="center">
     Projet réalisé lors de ma deuxième année de BTS.</b>
 </div>
-<p align="center">Ce projet m'a permis de me familiariser avec le concept des classes en PHP, ainsi que d'appliquer l'architecture MVC (Modèle-Vue-Contrôleur) que j'ai également pu utiliser par la suite dans mon projet GCR.</p><br>
-<p>J'ai utilisé SQL Server comme base de données et j'ai pu mettre en pratique ce que j'ai appris en cours, notamment en ce qui concerne l'utilisation des procédures stockées.<p/><br>
+<p align="center">Ce projet m'a permis de me familiariser avec le concept des classes en PHP, ainsi que d'appliquer l'architecture MVC (Modèle-Vue-Contrôleur) que j'ai également pu utiliser par la suite dans mon projet GCR. J'ai utilisé SQL Server comme base de données et j'ai pu mettre en pratique ce que j'ai appris en cours, notamment en ce qui concerne l'utilisation des procédures stockées.<p/><br>
 ## 📸 A small preview
 
 <p align="center">
