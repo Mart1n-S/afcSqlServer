@@ -5,7 +5,7 @@
   <img src="https://www.vectorlogo.zone/logos/php/php-ar21.svg" alt="PHP Logo" height="80"/>
   <img src="https://upload.vectorlogo.zone/logos/javascript/images/239ec8a4-163e-4792-83b6-3f6d96911757.svg" height="75" alt="Javascript Logo" />           
   <img src="https://www.vectorlogo.zone/logos/w3_css/w3_css-icon.svg" height="75" alt="CSS Logo" />
-  <img src="https://cdn.worldvectorlogo.com/logos/microsoft-sql-server-1.svg" height="75" alt="CSS Logo" />
+  <img src="https://seeklogo.com/images/M/microsoft-sql-server-logo-96AF49E2B3-seeklogo.com.png" height="75" alt="CSS Logo" />
   <br>
   <br>
 </p>
